@@ -1,0 +1,110 @@
+--[[
+WARNING: Heads up! This script has not been verified by 91 Use at your own risk!
+]]
+
+setclipboard("https://discord.gg/ypjMw5xmuj")
+local pid = game.PlaceId
+if pid ~= 189707 then
+    print("Error not found natural disasters survival game!")
+    return
+end
+
+-- 防摔伤功能变量
+local rs = game:GetService("RunService")
+local hb = rs.Heartbeat
+local rsd = rs.RenderStepped
+local lp = game.Players.LocalPlayer
+local z = Vector3.zero
+local antiPushEnabled = false
+local currentConnection = nil
+
+-- 创建UI
+local Players = game:GetService("Players")
+local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+local UIS = game:GetService("UserInputService")
+
+-- 创建主GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AntiPushGUI"
+screenGui.Parent = PlayerGui
+
+-- 创建主按钮
+local mainButton = Instance.new("Frame")
+mainButton.Name = "MainButton"
+mainButton.Size = UDim2.new(0, 40, 0, 40)
+mainButton.Position = UDim2.new(0.5, -20, 0, 20) -- 屏幕正上方
+mainButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50) -- 默认红色（关闭状态）
+mainButton.BorderSizePixel = 2
+mainButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
+mainButton.Active = true
+mainButton.Draggable = true
+mainButton.Parent = screenGui
+
+-- 添加圆角
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0.2, 0)
+corner.Parent = mainButton
+
+-- 添加按钮文字
+local buttonText = Instance.new("TextLabel")
+buttonText.Name = "ButtonText"
+buttonText.Size = UDim2.new(1, 0, 1, 0)
+buttonText.BackgroundTransparency = 1
+buttonText.Text = "防摔"
+buttonText.TextColor3 = Color3.fromRGB(255, 255, 255)
+buttonText.TextScaled = true
+buttonText.Font = Enum.Font.GothamBold
+buttonText.Parent = mainButton
+
+-- 防摔伤功能函数
+local function toggleAntiPush()
+    antiPushEnabled = not antiPushEnabled
+    
+    if antiPushEnabled then
+        -- 开启防摔伤
+        mainButton.BackgroundColor3 = Color3.fromRGB(50, 255, 50) -- 绿色
+        buttonText.Text = "防摔\nON"
+        
+        local function f(c)
+            local r = c:WaitForChild("HumanoidRootPart")
+            if r then
+                currentConnection = hb:Connect(function()
+                    if not r.Parent then
+                        currentConnection:Disconnect()
+                    end
+                    local v = r.AssemblyLinearVelocity
+                    r.AssemblyLinearVelocity = z
+                    rsd:Wait()
+                    r.AssemblyLinearVelocity = v
+                end)
+            end
+        end
+        
+        f(lp.Character)
+        lp.CharacterAdded:Connect(f)
+        
+    else
+        -- 关闭防摔伤
+        mainButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50) -- 红色
+        buttonText.Text = "防摔\nOFF"
+        
+        if currentConnection then
+            currentConnection:Disconnect()
+            currentConnection = nil
+        end
+    end
+end
+
+-- 按钮点击事件
+mainButton.MouseButton1Click:Connect(toggleAntiPush)
+
+-- 添加悬停效果
+mainButton.MouseEnter:Connect(function()
+    mainButton.BorderColor3 = Color3.fromRGB(100, 200, 255)
+end)
+
+mainButton.MouseLeave:Connect(function()
+    mainButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
+end)
+
+print("防摔伤脚本已加载！点击UI按钮开启/关闭功能。")
