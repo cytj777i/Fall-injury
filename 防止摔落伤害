@@ -1,5 +1,3 @@
-setclipboard("https://discord.gg/ypjMw5xmuj")
-
 local pid = game.PlaceId
 if pid ~= 189707 then
     print("Error not found natural disasters survival game!")
