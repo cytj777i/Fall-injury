@@ -1,110 +1,171 @@
---[[
-WARNING: Heads up! This script has not been verified by 91 Use at your own risk!
-]]
-
 setclipboard("https://discord.gg/ypjMw5xmuj")
+
 local pid = game.PlaceId
 if pid ~= 189707 then
     print("Error not found natural disasters survival game!")
     return
 end
 
--- 防摔伤功能变量
 local rs = game:GetService("RunService")
 local hb = rs.Heartbeat
 local rsd = rs.RenderStepped
 local lp = game.Players.LocalPlayer
+local ts = game:GetService("TweenService")
 local z = Vector3.zero
-local antiPushEnabled = false
-local currentConnection = nil
 
--- 创建UI
-local Players = game:GetService("Players")
-local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
-local UIS = game:GetService("UserInputService")
+-- 防摔功能状态
+local antiPushEnabled = true
+local currentConnections = {}
 
--- 创建主GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AntiPushGUI"
-screenGui.Parent = PlayerGui
-
--- 创建主按钮
-local mainButton = Instance.new("Frame")
-mainButton.Name = "MainButton"
-mainButton.Size = UDim2.new(0, 40, 0, 40)
-mainButton.Position = UDim2.new(0.5, -20, 0, 20) -- 屏幕正上方
-mainButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50) -- 默认红色（关闭状态）
-mainButton.BorderSizePixel = 2
-mainButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
-mainButton.Active = true
-mainButton.Draggable = true
-mainButton.Parent = screenGui
-
--- 添加圆角
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0.2, 0)
-corner.Parent = mainButton
-
--- 添加按钮文字
-local buttonText = Instance.new("TextLabel")
-buttonText.Name = "ButtonText"
-buttonText.Size = UDim2.new(1, 0, 1, 0)
-buttonText.BackgroundTransparency = 1
-buttonText.Text = "防摔"
-buttonText.TextColor3 = Color3.fromRGB(255, 255, 255)
-buttonText.TextScaled = true
-buttonText.Font = Enum.Font.GothamBold
-buttonText.Parent = mainButton
-
--- 防摔伤功能函数
-local function toggleAntiPush()
-    antiPushEnabled = not antiPushEnabled
+-- 创建UI界面
+local function createUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "AntiPushUI"
+    screenGui.Parent = lp:WaitForChild("PlayerGui")
     
-    if antiPushEnabled then
-        -- 开启防摔伤
-        mainButton.BackgroundColor3 = Color3.fromRGB(50, 255, 50) -- 绿色
-        buttonText.Text = "防摔\nON"
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 200, 0, 120)
+    mainFrame.Position = UDim2.new(0, 10, 0, 10)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Parent = screenGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = mainFrame
+    
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    title.Text = "防摔功能控制"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextSize = 14
+    title.Font = Enum.Font.GothamBold
+    title.Parent = mainFrame
+    
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 8)
+    titleCorner.Parent = title
+    
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(1, -20, 0, 25)
+    statusLabel.Position = UDim2.new(0, 10, 0, 40)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = "状态: 开启"
+    statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+    statusLabel.TextSize = 14
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.Parent = mainFrame
+    
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(1, -20, 0, 35)
+    toggleBtn.Position = UDim2.new(0, 10, 0, 75)
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+    toggleBtn.Text = "关闭功能"
+    toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleBtn.TextSize = 14
+    toggleBtn.Font = Enum.Font.GothamBold
+    toggleBtn.Parent = mainFrame
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = toggleBtn
+    
+    -- 切换按钮功能
+    toggleBtn.MouseButton1Click:Connect(function()
+        antiPushEnabled = not antiPushEnabled
         
-        local function f(c)
-            local r = c:WaitForChild("HumanoidRootPart")
-            if r then
-                currentConnection = hb:Connect(function()
-                    if not r.Parent then
-                        currentConnection:Disconnect()
-                    end
-                    local v = r.AssemblyLinearVelocity
-                    r.AssemblyLinearVelocity = z
-                    rsd:Wait()
-                    r.AssemblyLinearVelocity = v
-                end)
+        if antiPushEnabled then
+            statusLabel.Text = "状态: 开启"
+            statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+            toggleBtn.Text = "关闭功能"
+            toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+            
+            -- 重新启用防摔功能
+            if lp.Character then
+                f(lp.Character)
             end
+        else
+            statusLabel.Text = "状态: 关闭"
+            statusLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
+            toggleBtn.Text = "开启功能"
+            toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+            
+            -- 禁用防摔功能
+            for _, connection in pairs(currentConnections) do
+                if connection then
+                    connection:Disconnect()
+                end
+            end
+            currentConnections = {}
         end
-        
-        f(lp.Character)
-        lp.CharacterAdded:Connect(f)
-        
-    else
-        -- 关闭防摔伤
-        mainButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50) -- 红色
-        buttonText.Text = "防摔\nOFF"
-        
-        if currentConnection then
-            currentConnection:Disconnect()
-            currentConnection = nil
+    end)
+    
+    -- 添加拖拽功能
+    local dragging = false
+    local dragInput, dragStart, startPos
+    
+    mainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
         end
+    end)
+    
+    mainFrame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            local delta = input.Position - dragStart
+            mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    
+    return screenGui
+end
+
+-- 防摔功能函数
+local function f(c)
+    if not antiPushEnabled then return end
+    
+    local r = c:WaitForChild("HumanoidRootPart")
+    if r then
+        local con
+        con = hb:Connect(function()
+            if not r.Parent or not antiPushEnabled then
+                if con then
+                    con:Disconnect()
+                    table.remove(currentConnections, table.find(currentConnections, con))
+                end
+                return
+            end
+            local v = r.AssemblyLinearVelocity
+            r.AssemblyLinearVelocity = z
+            rsd:Wait()
+            r.AssemblyLinearVelocity = v
+        end)
+        
+        table.insert(currentConnections, con)
     end
 end
 
--- 按钮点击事件
-mainButton.MouseButton1Click:Connect(toggleAntiPush)
+-- 初始化
+createUI()
 
--- 添加悬停效果
-mainButton.MouseEnter:Connect(function()
-    mainButton.BorderColor3 = Color3.fromRGB(100, 200, 255)
-end)
+-- 应用防摔功能到当前角色
+if lp.Character then
+    f(lp.Character)
+end
 
-mainButton.MouseLeave:Connect(function()
-    mainButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
-end)
-
-print("防摔伤脚本已加载！点击UI按钮开启/关闭功能。")
+lp.CharacterAdded:Connect(f)
