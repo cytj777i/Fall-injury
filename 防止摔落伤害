@@ -1,169 +1,32 @@
+--[[
+WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+ 
+setclipboard("https://discord.gg/ypjMw5xmuj")
 local pid = game.PlaceId
 if pid ~= 189707 then
-    print("Error not found natural disasters survival game!")
-    return
+print("Error not found natural disasters survival game!")
+return
 end
-
 local rs = game:GetService("RunService")
 local hb = rs.Heartbeat
 local rsd = rs.RenderStepped
 local lp = game.Players.LocalPlayer
-local ts = game:GetService("TweenService")
 local z = Vector3.zero
-
--- 防摔功能状态
-local antiPushEnabled = true
-local currentConnections = {}
-
--- 创建UI界面
-local function createUI()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "AntiPushUI"
-    screenGui.Parent = lp:WaitForChild("PlayerGui")
-    
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 200, 0, 120)
-    mainFrame.Position = UDim2.new(0, 10, 0, 10)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    mainFrame.BorderSizePixel = 0
-    mainFrame.Parent = screenGui
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = mainFrame
-    
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 30)
-    title.Position = UDim2.new(0, 0, 0, 0)
-    title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    title.Text = "防摔功能控制"
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextSize = 14
-    title.Font = Enum.Font.GothamBold
-    title.Parent = mainFrame
-    
-    local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 8)
-    titleCorner.Parent = title
-    
-    local statusLabel = Instance.new("TextLabel")
-    statusLabel.Size = UDim2.new(1, -20, 0, 25)
-    statusLabel.Position = UDim2.new(0, 10, 0, 40)
-    statusLabel.BackgroundTransparency = 1
-    statusLabel.Text = "状态: 开启"
-    statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-    statusLabel.TextSize = 14
-    statusLabel.Font = Enum.Font.Gotham
-    statusLabel.Parent = mainFrame
-    
-    local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Size = UDim2.new(1, -20, 0, 35)
-    toggleBtn.Position = UDim2.new(0, 10, 0, 75)
-    toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-    toggleBtn.Text = "关闭功能"
-    toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggleBtn.TextSize = 14
-    toggleBtn.Font = Enum.Font.GothamBold
-    toggleBtn.Parent = mainFrame
-    
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 6)
-    btnCorner.Parent = toggleBtn
-    
-    -- 切换按钮功能
-    toggleBtn.MouseButton1Click:Connect(function()
-        antiPushEnabled = not antiPushEnabled
-        
-        if antiPushEnabled then
-            statusLabel.Text = "状态: 开启"
-            statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-            toggleBtn.Text = "关闭功能"
-            toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-            
-            -- 重新启用防摔功能
-            if lp.Character then
-                f(lp.Character)
-            end
-        else
-            statusLabel.Text = "状态: 关闭"
-            statusLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
-            toggleBtn.Text = "开启功能"
-            toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-            
-            -- 禁用防摔功能
-            for _, connection in pairs(currentConnections) do
-                if connection then
-                    connection:Disconnect()
-                end
-            end
-            currentConnections = {}
-        end
-    end)
-    
-    -- 添加拖拽功能
-    local dragging = false
-    local dragInput, dragStart, startPos
-    
-    mainFrame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = mainFrame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-    
-    mainFrame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-    
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if dragging and input == dragInput then
-            local delta = input.Position - dragStart
-            mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-    
-    return screenGui
-end
-
--- 防摔功能函数
 local function f(c)
-    if not antiPushEnabled then return end
-    
-    local r = c:WaitForChild("HumanoidRootPart")
-    if r then
-        local con
-        con = hb:Connect(function()
-            if not r.Parent or not antiPushEnabled then
-                if con then
-                    con:Disconnect()
-                    table.remove(currentConnections, table.find(currentConnections, con))
-                end
-                return
-            end
-            local v = r.AssemblyLinearVelocity
-            r.AssemblyLinearVelocity = z
-            rsd:Wait()
-            r.AssemblyLinearVelocity = v
-        end)
-        
-        table.insert(currentConnections, con)
-    end
+local r = c:WaitForChild("HumanoidRootPart")
+if r then
+local con
+con = hb:Connect(function()
+if not r.Parent then
+con:Disconnect()
 end
-
--- 初始化
-createUI()
-
--- 应用防摔功能到当前角色
-if lp.Character then
-    f(lp.Character)
+local v = r.AssemblyLinearVelocity
+r.AssemblyLinearVelocity = z
+rsd:Wait()
+r.AssemblyLinearVelocity = v
+end)
 end
-
+end
+f(lp.Character)
 lp.CharacterAdded:Connect(f)
