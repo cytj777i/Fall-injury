@@ -1,12 +1,8 @@
---[[
-WARNING: Heads up! This script has not been verified by 91 Use at your own risk!
-]]
-
 local pid = game.PlaceId
 if pid ~= 189707 then
     game:GetService("StarterGui"):SetCore("SendNotification",{
-        Title = "错误",
-        Text = "bro这不是自然灾害生存游戏",
+        Title = "启动失败",
+        Text = "只在自然灾害里有用",
         Duration = 5
     })
     return
