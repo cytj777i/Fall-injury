@@ -1,14 +1,4 @@
-local pid = game.PlaceId
-if pid ~= 189707 then
-    game:GetService("StarterGui"):SetCore("SendNotification",{
-        Title = "启动失败",
-        Text = "只在自然灾害里有用",
-        Duration = 5
-    })
-    return
-end
-
--- 创建GUI
+-- 创建GUI（我把检测服务器id删了，所有有摔落伤害的服务器里都可用）
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -164,7 +154,7 @@ local function toggleAntiFall()
                 applyAntiFall(character)
             end
         end)
-        
+
         game:GetService("StarterGui"):SetCore("SendNotification",{
             Title = "禁用摔落伤害",
             Text = "禁用摔落功能已开启",
@@ -176,7 +166,7 @@ local function toggleAntiFall()
 
         -- 移除所有连接
         removeAntiFall()
-        
+
         game:GetService("StarterGui"):SetCore("SendNotification",{
             Title = "禁用摔落伤害",
             Text = "禁用摔落功能已关闭",
