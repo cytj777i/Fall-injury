@@ -10,7 +10,7 @@ local hookedEvents = {}
 -- 显示通知
 local function showNotification()
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "灾难岛专用防止摔落伤害已开启",
+        Title = "灾难岛防止摔落伤害已开启",
         Text = "注意：执行后无法被关闭",
         Duration = 5,
         Icon = "rbxassetid://6728855517"
