@@ -1,0 +1,85 @@
+-- 防摔落伤害脚本
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- 防护状态
+local fallDamageProtection = true
+local originalFireServer
+local hookedEvents = {}
+
+-- 显示通知
+local function showNotification()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "灾难岛专用防止摔落伤害已开启",
+        Text = "注意：执行后无法被关闭",
+        Duration = 5,
+        Icon = "rbxassetid://6728855517"
+    })
+    print("灾难岛防止摔落伤害已开启")
+end
+
+-- 功能函数：启用防护
+local function enableProtection()
+    if not fallDamageProtection then return end
+    
+    -- 保存原函数
+    originalFireServer = originalFireServer or getrenv().fireServer
+    
+    -- 拦截网络事件
+    local Network = game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("Network")
+    
+    -- 钩子函数
+    local hookFunction = function(self, ...)
+        if not fallDamageProtection then
+            return originalFireServer(self, ...)
+        end
+        
+        local args = {...}
+        local eventName = tostring(self)
+        
+        -- 阻止摔落伤害相关事件
+        local blockedEvents = {
+            "8edb5104-6778-44c8-a29e-5ddd6f6bec50", -- 可能是摔落伤害数值
+            "d7e946ab-8efa-4a59-b9c9-5d557d021099"  -- 可能是摔落伤害触发
+        }
+        
+        for _, blocked in ipairs(blockedEvents) do
+            if eventName == blocked then
+                print("拦截摔落伤害事件: " .. eventName)
+                return nil
+            end
+        end
+        
+        return originalFireServer(self, ...)
+    end
+    
+    -- 应用钩子
+    if not hookedEvents[Network] then
+        hookedEvents[Network] = true
+        local mt = getrawmetatable(Network)
+        local oldNamecall = mt.__namecall
+        
+        if setreadonly then setreadonly(mt, false) end
+        
+        mt.__namecall = newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            if method == "FireServer" then
+                return hookFunction(self, ...)
+            end
+            return oldNamecall(self, ...)
+        end)
+        
+        if setreadonly then setreadonly(mt, true) end
+    end
+    
+    showNotification()
+end
+
+-- 脚本启动时立即启用防护
+enableProtection()
+
+-- 防止脚本重复运行
+if _G.FallDamageProtectionLoaded then
+    return
+end
+_G.FallDamageProtectionLoaded = true
