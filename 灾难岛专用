@@ -2,84 +2,120 @@
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- 防护状态
-local fallDamageProtection = true
-local originalFireServer
-local hookedEvents = {}
+-- 全局变量存储状态
+_G.FallDamageProtection = _G.FallDamageProtection or {
+    enabled = false,
+    originalFireServer = nil,
+    hookedEvents = {},
+    originalNamecall = nil
+}
+
+local protectionData = _G.FallDamageProtection
 
 -- 显示通知
-local function showNotification()
+local function showNotification(enabled)
+    local status = enabled and "开启，再次执行关闭" or "关闭，再次执行开启"
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "灾难岛防止摔落伤害已开启",
-        Text = "注意：执行后无法被关闭",
+        Title = "灾难岛防止摔落伤害",
+        Text = "状态: " .. status,
         Duration = 5,
         Icon = "rbxassetid://6728855517"
     })
-    print("灾难岛防止摔落伤害已开启")
+    print("灾难岛防止摔落伤害已" .. status)
 end
 
 -- 功能函数：启用防护
 local function enableProtection()
-    if not fallDamageProtection then return end
-    
+    protectionData.enabled = true
+
     -- 保存原函数
-    originalFireServer = originalFireServer or getrenv().fireServer
-    
+    protectionData.originalFireServer = protectionData.originalFireServer or getrenv().fireServer
+
     -- 拦截网络事件
     local Network = game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("Network")
-    
+
     -- 钩子函数
     local hookFunction = function(self, ...)
-        if not fallDamageProtection then
-            return originalFireServer(self, ...)
+        if not protectionData.enabled then
+            return protectionData.originalFireServer(self, ...)
         end
-        
+
         local args = {...}
         local eventName = tostring(self)
-        
+
         -- 阻止摔落伤害相关事件
         local blockedEvents = {
             "8edb5104-6778-44c8-a29e-5ddd6f6bec50", -- 可能是摔落伤害数值
             "d7e946ab-8efa-4a59-b9c9-5d557d021099"  -- 可能是摔落伤害触发
         }
-        
+
         for _, blocked in ipairs(blockedEvents) do
             if eventName == blocked then
                 print("拦截摔落伤害事件: " .. eventName)
                 return nil
             end
         end
-        
-        return originalFireServer(self, ...)
+
+        return protectionData.originalFireServer(self, ...)
     end
-    
+
     -- 应用钩子
-    if not hookedEvents[Network] then
-        hookedEvents[Network] = true
+    if not protectionData.hookedEvents[Network] then
+        protectionData.hookedEvents[Network] = true
         local mt = getrawmetatable(Network)
-        local oldNamecall = mt.__namecall
         
+        if not protectionData.originalNamecall then
+            protectionData.originalNamecall = mt.__namecall
+        end
+
         if setreadonly then setreadonly(mt, false) end
-        
+
         mt.__namecall = newcclosure(function(self, ...)
             local method = getnamecallmethod()
             if method == "FireServer" then
                 return hookFunction(self, ...)
             end
-            return oldNamecall(self, ...)
+            return protectionData.originalNamecall(self, ...)
         end)
-        
+
         if setreadonly then setreadonly(mt, true) end
     end
+
+    showNotification(true)
+end
+
+-- 功能函数：禁用防护
+local function disableProtection()
+    protectionData.enabled = false
     
-    showNotification()
+    -- 恢复原来的元表
+    local Network = game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("Network")
+    if protectionData.hookedEvents[Network] and protectionData.originalNamecall then
+        local mt = getrawmetatable(Network)
+        if setreadonly then setreadonly(mt, false) end
+        mt.__namecall = protectionData.originalNamecall
+        if setreadonly then setreadonly(mt, true) end
+        
+        protectionData.hookedEvents[Network] = false
+    end
+    
+    showNotification(false)
 end
 
--- 脚本启动时立即启用防护
-enableProtection()
-
--- 防止脚本重复运行
-if _G.FallDamageProtectionLoaded then
-    return
+-- 切换防护状态
+local function toggleProtection()
+    if protectionData.enabled then
+        disableProtection()
+    else
+        enableProtection()
+    end
 end
-_G.FallDamageProtectionLoaded = true
+
+-- 执行切换
+toggleProtection()
+
+-- 返回当前状态供外部使用
+return {
+    toggle = toggleProtection,
+    isEnabled = function() return protectionData.enabled end
+}
