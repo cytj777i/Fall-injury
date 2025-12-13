@@ -1,4 +1,4 @@
--- 创建GUI（我把检测服务器id删了，所有有摔落伤害的服务器里都可用）
+-- 创建GUI（我把检测服务器id删了，部分有摔落伤害的服务器里通用）
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -248,7 +248,7 @@ end)
 
 -- 发送加载成功通知
 game:GetService("StarterGui"):SetCore("SendNotification",{
-    Title = "XTTT禁用摔落伤害脚本",
+    Title = "ciTiy禁用摔落伤害脚本",
     Text = "脚本加载成功",
     Duration = 5
 })
